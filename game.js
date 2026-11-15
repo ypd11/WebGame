@@ -6,6 +6,7 @@ const playerSprite = new Image();
 playerSprite.src = "assets/player-sprites.svg";
 
 const T = 40;
+const ZOOM = 1.35;
 const W = 80;
 const H = 80;
 const RES = {
@@ -105,8 +106,9 @@ function genWorld(seed) {
   const rng = mulberry32(seed);
   for (let i = 0; i < W * H; i++) G.tiles[i] = RES.GRASS;
 
-  const lakeCx = 10 + rng() * 6, lakeCy = 8 + rng() * 5;
-  const lakeR = 5 + rng() * 3;
+  // Keep the lake away from the starting area so it cannot form a water island.
+  const lakeCx = 25 + rng() * 8, lakeCy = 17 + rng() * 9;
+  const lakeR = 4.5 + rng() * 2.5;
   for (let y = 0; y < H; y++) {
     for (let x = 0; x < W; x++) {
       const d = Math.sqrt((x - lakeCx) ** 2 + (y - lakeCy) ** 2) + rng() * 1.6 - 0.8;
@@ -116,7 +118,18 @@ function genWorld(seed) {
 
   function inSpawn(x, y) {
     const sx = 9, sy = 10;
-    return Math.abs(x - sx) < 4 && Math.abs(y - sy) < 4;
+    return Math.abs(x - sx) < 6 && Math.abs(y - sy) < 6;
+  }
+
+  // Guarantee a broad, continuous land route from the spawn clearing into the world.
+  for (let step = 0; step <= 48; step++) {
+    const t = step / 48;
+    const cx = Math.round(9 + (40 - 9) * t);
+    const cy = Math.round(10 + (40 - 10) * t);
+    for (let oy = -2; oy <= 2; oy++) for (let ox = -2; ox <= 2; ox++) {
+      const x = cx + ox, y = cy + oy;
+      if (x >= 0 && y >= 0 && x < W && y < H) G.tiles[y * W + x] = RES.GRASS;
+    }
   }
 
   function scatter(ptype, pct, clumpMin, clumpMax) {
@@ -356,7 +369,7 @@ function updatePlayer(dt) {
   const moving = Math.abs(mx) + Math.abs(my) > 0;
   p.moving = moving;
   if (moving) {
-    if (Math.abs(mx) > Math.abs(my)) p.dir = mx < 0 ? 1 : 2;
+    if (Math.abs(mx) > Math.abs(my)) p.dir = mx < 0 ? 2 : 1;
     else p.dir = my < 0 ? 3 : 0;
   }
   let nx = mx, ny = my;
@@ -814,7 +827,7 @@ function refuelFire(tx, ty) {
 
 function screenToWorld(cx, cy) {
   const w = canvas.width / dpr, h = canvas.height / dpr;
-  return { x: G.cam.x - w / 2 + cx, y: G.cam.y - h / 2 + cy };
+  return { x: G.cam.x + (cx - w / 2) / ZOOM, y: G.cam.y + (cy - h / 2) / ZOOM };
 }
 
 function aimFromMouse() {
@@ -1315,14 +1328,15 @@ function drawLighting(vp) {
   o.fillRect(0, 0, w, h);
 
   o.globalCompositeOperation = "destination-out";
-  const leftPx = (G.cam.x - vp.w / 2) * dpr, topPx = (G.cam.y - vp.h / 2) * dpr;
   const add = (wx, wy, r, a) => {
-    const sx = wx * dpr - leftPx, sy = wy * dpr - topPx;
-    const g = o.createRadialGradient(sx, sy, r * dpr * 0.1, sx, sy, r * dpr);
+    const sx = (vp.w / 2 + (wx - G.cam.x) * ZOOM) * dpr;
+    const sy = (vp.h / 2 + (wy - G.cam.y) * ZOOM) * dpr;
+    const rr = r * ZOOM * dpr;
+    const g = o.createRadialGradient(sx, sy, rr * 0.1, sx, sy, rr);
     g.addColorStop(0, "rgba(255,255,255," + a + ")");
     g.addColorStop(1, "rgba(255,255,255,0)");
     o.fillStyle = g;
-    o.beginPath(); o.arc(sx, sy, r * dpr, 0, 6.28); o.fill();
+    o.beginPath(); o.arc(sx, sy, rr, 0, 6.28); o.fill();
   };
 
   const p = G.player;
@@ -1343,15 +1357,16 @@ function drawLighting(vp) {
 }
 
 function drawCampfireGlow(vp) {
-  const left = G.cam.x - vp.w / 2;
-  const top = G.cam.y - vp.h / 2;
+  const centerX = vp.w / 2;
+  const centerY = vp.h / 2;
   ctx.save();
   ctx.globalCompositeOperation = "screen";
   for (const f of G.fires) {
     if (!f.lit) continue;
-    const x = f.x - left, y = f.y - top - 5;
+    const x = centerX + (f.x - G.cam.x) * ZOOM;
+    const y = centerY + (f.y - G.cam.y) * ZOOM - 5 * ZOOM;
     const flicker = 0.94 + Math.sin(G.time * 12 + f.phase) * 0.06;
-    const radius = (f.avoidR === 130 ? 115 : 175) * flicker;
+    const radius = (f.avoidR === 130 ? 115 : 175) * flicker * ZOOM;
     const g = ctx.createRadialGradient(x, y, 2, x, y, radius);
     g.addColorStop(0, "rgba(255,170,76,0.22)");
     g.addColorStop(0.28, "rgba(239,112,45,0.12)");
@@ -1426,8 +1441,8 @@ function render() {
   G.cam.shy = shake ? (Math.random() - 0.5) * shake * 2 : 0;
 
   const vp = {
-    lx: G.cam.x - w / 2, rx: G.cam.x + w / 2,
-    ty: G.cam.y - h / 2, by: G.cam.y + h / 2,
+    lx: G.cam.x - w / (2 * ZOOM), rx: G.cam.x + w / (2 * ZOOM),
+    ty: G.cam.y - h / (2 * ZOOM), by: G.cam.y + h / (2 * ZOOM),
     w, h
   };
 
@@ -1438,7 +1453,9 @@ function render() {
     drawSkyTitle(w, h);
   } else {
     drawSky({}, 0);
-    ctx.translate(-vp.lx + G.cam.shx, -vp.ty + G.cam.shy);
+    ctx.translate(w / 2 + G.cam.shx, h / 2 + G.cam.shy);
+    ctx.scale(ZOOM, ZOOM);
+    ctx.translate(-G.cam.x, -G.cam.y);
     drawGround(vp);
     drawGroundTexture(vp);
     drawRocks();
