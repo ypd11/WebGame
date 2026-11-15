@@ -47,15 +47,17 @@ function buildWorld(){
  for(let x=0;x<world.size;x++)for(let z=0;z<world.size;z++){if(isLake(x,z))continue;const h=world.heights[x][z];if(rand(x,z,2)>.94)tufts.push([x+.25,h+.55,z+.2,.16,.35,.16]);if(rand(x,z,4)>.988)flowers.push([x+.25,h+.55,z+.2,.12,.22,.12]);}
  addInstanced(mats.leaves2,tufts);addInstanced(new THREE.MeshLambertMaterial({color:0xe2c779}),flowers);
  // Trees are assembled from chunky trunks and layered leaf blocks.
- const trunks=[],canopies=[],canopies2=[];
  for(let x=3;x<world.size-3;x++)for(let z=3;z<world.size-3;z++){
   const spawnSafe=Math.hypot(x-27,z-27)<7;
   if(!spawnSafe&&!isLake(x,z)&&rand(x,z,9)>.965){
-   const h=world.heights[x][z],th=3+Math.floor(rand(x,z,11)*2);trunks.push([x,h+th/2,z,.72,th,.72]);
-   canopies.push([x,h+th+0.1,z,2.7,1.5,2.7]);canopies2.push([x-.5,h+th+.9,z+.25,1.8,1.25,1.8]);
+   const h=world.heights[x][z],th=3+Math.floor(rand(x,z,11)*2);
+   const tree=new THREE.Group();tree.position.set(x,h+.5,z);
+   const trunk=new THREE.Mesh(cubeGeo,mats.trunk);trunk.scale.set(.72,th,.72);trunk.position.y=th/2;trunk.castShadow=true;trunk.receiveShadow=true;tree.add(trunk);
+   const crown=new THREE.Mesh(cubeGeo,mats.leaves);crown.scale.set(2.7,1.5,2.7);crown.position.y=th+.1;crown.castShadow=true;tree.add(crown);
+   const crownTop=new THREE.Mesh(cubeGeo,mats.leaves2);crownTop.scale.set(1.8,1.25,1.8);crownTop.position.set(-.5,th+.9,.25);crownTop.castShadow=true;tree.add(crownTop);
+   tree.userData={kind:'wood',amount:3};scene.add(tree);world.interactables.push(tree);world.trees.push(tree);
   }
  }
- addInstanced(mats.trunk,trunks);addInstanced(mats.leaves,canopies);addInstanced(mats.leaves2,canopies2);
  // A few rocks as larger block clusters.
  const rocksMat=new THREE.MeshLambertMaterial({color:0x818b87});
  for(let x=4;x<world.size-4;x++)for(let z=4;z<world.size-4;z++){if(!isLake(x,z)&&Math.hypot(x-27,z-27)>5.5&&rand(x,z,23)>.989){const y=world.heights[x][z]+.55;const rock=new THREE.Group();rock.position.set(x,y,z);const a=new THREE.Mesh(cubeGeo,rocksMat);a.scale.set(.9,.85,.85);a.position.y=.1;a.castShadow=true;a.receiveShadow=true;rock.add(a);const b=new THREE.Mesh(cubeGeo,rocksMat);b.scale.set(.55,.55,.6);b.position.set(.35,.65,.05);b.castShadow=true;rock.add(b);rock.userData={kind:'stone',amount:2};scene.add(rock);world.interactables.push(rock);world.rocks.push(rock);}}
@@ -101,7 +103,7 @@ document.addEventListener('mousemove',e=>{if(!locked)return;yaw-=e.movementX*.00
 document.addEventListener('keydown',e=>{keys[e.code]=true;if(['Space','ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(e.code))e.preventDefault();if(e.code.startsWith('Digit')){const n=Number(e.code.slice(5))-1;if(n>=0&&n<4)selectSlot(n);}if(e.code==='Escape'&&locked)document.exitPointerLock();if(e.code==='KeyE'&&player.userData.berries>0){player.userData.berries--;player.userData.hunger=Math.min(100,player.userData.hunger+18);updateHud();showToast('YOU ATE A WILD BERRY');}});
 document.addEventListener('keyup',e=>keys[e.code]=false);
 canvas.addEventListener('contextmenu',e=>e.preventDefault());
-canvas.addEventListener('mousedown',e=>{if(!locked)return;raycaster.setFromCamera(center,camera);const hits=raycaster.intersectObjects(world.interactables,true);if(e.button===0&&hits.length){let obj=hits[0].object;while(obj.parent&&!obj.userData.kind)obj=obj.parent;if(obj.userData.kind){const kind=obj.userData.kind;if(kind==='stone')player.userData.stone+=obj.userData.amount;else player.userData.berries+=obj.userData.amount;scene.remove(obj);world.interactables=world.interactables.filter(o=>o!==obj);updateHud();showToast(kind==='stone'?'GATHERED STONE':'GATHERED WILD BERRIES');}}else if(e.button===2){if(selected===0&&player.userData.wood>0){placeBlock(0x9a6b43);player.userData.wood--;}else if(selected===1&&player.userData.stone>0){placeBlock(0x89918a);player.userData.stone--;}else if(selected===2&&player.userData.wood>=8){player.userData.wood-=8;showToast('CAMPFIRE BUILT');}else if(selected===3&&player.userData.wood>=4){player.userData.wood-=4;showToast('WOODEN WALL BUILT');}else showToast('NOT ENOUGH RESOURCES');updateHud();}});
+canvas.addEventListener('mousedown',e=>{if(!locked)return;raycaster.setFromCamera(center,camera);const hits=raycaster.intersectObjects(world.interactables,true);if(e.button===0&&hits.length){let obj=hits[0].object;while(obj.parent&&!obj.userData.kind)obj=obj.parent;if(obj.userData.kind){const kind=obj.userData.kind;if(kind==='stone')player.userData.stone+=obj.userData.amount;else if(kind==='wood')player.userData.wood+=obj.userData.amount;else player.userData.berries+=obj.userData.amount;scene.remove(obj);world.interactables=world.interactables.filter(o=>o!==obj);updateHud();showToast(kind==='stone'?'GATHERED STONE':kind==='wood'?'GATHERED WOOD':'GATHERED WILD BERRIES');}}else if(e.button===2){if(selected===0&&player.userData.wood>0){placeBlock(0x9a6b43);player.userData.wood--;}else if(selected===1&&player.userData.stone>0){placeBlock(0x89918a);player.userData.stone--;}else if(selected===2&&player.userData.wood>=8){player.userData.wood-=8;showToast('CAMPFIRE BUILT');}else if(selected===3&&player.userData.wood>=4){player.userData.wood-=4;showToast('WOODEN WALL BUILT');}else showToast('NOT ENOUGH RESOURCES');updateHud();}});
 const placedBlocks=[];
 function placeBlock(color){const geo=cubeGeo;const mat=new THREE.MeshLambertMaterial({color});raycaster.setFromCamera(center,camera);const targets=world.interactables.length?world.interactables:[];const hit=raycaster.intersectObjects(targets,true)[0];if(!hit){showToast('AIM AT A SURFACE TO BUILD');return;}const pos=hit.point.clone().add(hit.face.normal.clone().multiplyScalar(.52));const block=new THREE.Mesh(geo,mat);block.position.set(Math.round(pos.x),Math.round(pos.y),Math.round(pos.z));block.castShadow=true;block.receiveShadow=true;scene.add(block);placedBlocks.push(block);showToast('BLOCK PLACED');}
 function terrainY(x,z){const ix=THREE.MathUtils.clamp(Math.round(x),0,world.size-1),iz=THREE.MathUtils.clamp(Math.round(z),0,world.size-1);return world.heights[ix][iz]+.5;}
