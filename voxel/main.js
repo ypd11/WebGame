@@ -117,10 +117,7 @@ function generateWorld() {
   }
 }
 function rebuildWorldMeshes() {
-  while(worldGroup.children.length) {
-    const obj=worldGroup.children.pop();
-    if(obj.geometry!==blockGeo) obj.geometry?.dispose?.();
-  }
+  while(worldGroup.children.length) worldGroup.remove(worldGroup.children[0]);
   blockInstances.clear();blockByInstance.clear();
   const groups=new Map();
   for(const b of blockMap.values()) {
@@ -242,7 +239,7 @@ function gatherOrPlace(e){
   } else if(e.button===2){
     const normal=hit.face.normal.clone().transformDirection(hit.object.matrixWorld);
     const x=Math.floor(b.x+normal.x+.5),y=Math.floor(b.y+normal.y+.5),z=Math.floor(b.z+normal.z+.5);
-    if(!['wood','dirt','stone'].includes(['wood','dirt','stone'][state.selected===1?0:state.selected===2?2:1]))return;
+    if(state.selected!==1&&state.selected!==2)return;
     const typeToPlace=state.selected===2?'stone':'wood';
     const cost=typeToPlace==='stone'?state.stone:state.wood;
     if(cost<1){say('NOT ENOUGH '+typeToPlace.toUpperCase());return;}
@@ -300,7 +297,7 @@ function updateEnvironment(dt){
 function animate(){
   requestAnimationFrame(animate);
   const dt=Math.min(clock.getDelta(),.04);
-  if(locked){updatePlayer(dt);updateCamera(dt);state.dayTime+=dt*.035;updateEnvironment(0);}
+  if(locked){updatePlayer(dt);updateCamera(dt);updateEnvironment(dt);}
   else updateCamera(dt);
   if(toastTimer>0){toastTimer-=dt;if(toastTimer<=0)toast.classList.remove('show');}
   updateHUD();
