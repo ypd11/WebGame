@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#111a19">
+  <title>Emberwood — Voxel Prototype</title>
+  <link rel="stylesheet" href="./style.css">
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js"
+      }
+    }
+  </script>
+</head>
+<body>
+  <main id="game">
+    <canvas id="world"></canvas>
+    <div class="top-shade"></div>
+    <header class="topbar">
+      <div class="brand"><span class="brand-mark">✦</span><span>EMBERWOOD</span><small>VOXEL FIELD TEST</small></div>
+      <div class="day-card"><span id="weatherDot"></span><span id="timeLabel">DAY 01 · 08:30</span></div>
+    </header>
+    <section class="vitals">
+      <div class="vital"><div><span>HEALTH</span><b id="healthValue">100</b></div><i><em id="healthBar" class="health"></em></i></div>
+      <div class="vital"><div><span>HUNGER</span><b id="hungerValue">100</b></div><i><em id="hungerBar" class="hunger"></em></i></div>
+      <div class="vital"><div><span>STAMINA</span><b id="staminaValue">100</b></div><i><em id="staminaBar" class="stamina"></em></i></div>
+    </section>
+    <section class="resources">
+      <div><span class="resource-icon wood"></span><b id="woodCount">0</b><small>WOOD</small></div>
+      <div><span class="resource-icon stone"></span><b id="stoneCount">0</b><small>STONE</small></div>
+      <div><span class="resource-icon berry"></span><b id="berryCount">0</b><small>BERRIES</small></div>
+    </section>
+    <div id="crosshair"><i></i><b></b></div>
+    <div id="prompt">CLICK TO ENTER THE FOREST</div>
+    <div class="bottom-ui">
+      <div class="controls-hint">WASD MOVE <span>·</span> SPACE JUMP <span>·</span> MOUSE LOOK <span>·</span> LMB GATHER <span>·</span> RMB PLACE</div>
+      <div class="hotbar" id="hotbar">
+        <button class="slot selected" data-slot="0"><strong>1</strong><span class="slot-icon axe">⚒</span><small>HATCHET</small></button>
+        <button class="slot" data-slot="1"><strong>2</strong><span class="slot-icon wood-icon">▦</span><small>WOOD</small></button>
+        <button class="slot" data-slot="2"><strong>3</strong><span class="slot-icon stone-icon">◆</span><small>STONE</small></button>
+        <button class="slot" data-slot="3"><strong>4</strong><span class="slot-icon berry-icon">✿</span><small>BERRIES</small></button>
+      </div>
+    </div>
+    <div id="startScreen" class="overlay">
+      <div class="start-panel">
+        <div class="eyebrow">A NEW WORLD IS GROWING</div>
+        <h1>EMBER<span>WOOD</span></h1>
+        <p>A quiet forest. A long night ahead.</p>
+        <button id="startButton">ENTER THE FOREST <span>→</span></button>
+        <small>WASD to move · Mouse to look · Left click to gather · Right click to place</small>
+      </div>
+    </div>
+    <div id="toast"></div>
+    <div class="corner-note">PROTOTYPE 0.1 <span>·</span> VOXEL WORLD</div>
+  </main>
+  <script type="module" src="./main.js"></script>
+</body>
+</html>
