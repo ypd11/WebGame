@@ -1,55 +1,52 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Emberwood</title>
-<link rel="stylesheet" href="style.css">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#101b17">
+  <title>Emberwood</title>
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
-<canvas id="game"></canvas>
+  <div id="game-root">
+    <canvas id="game"></canvas>
+    <div id="crosshair" aria-hidden="true"><i></i><b></b></div>
 
-<div id="hud" class="hidden">
-  <div id="vitals">
-    <div class="vit"><span class="vlabel">HEALTH</span><div class="vbar"><div id="bHealth" class="vfill ok"></div></div></div>
-    <div class="vit"><span class="vlabel">HUNGER</span><div class="vbar"><div id="bHunger" class="vfill"></div></div></div>
-    <div class="vit"><span class="vlabel">THIRST</span><div class="vbar"><div id="bThirst" class="vfill"></div></div></div>
-    <div class="vit"><span class="vlabel">STAMINA</span><div class="vbar"><div id="bStamina" class="vfill"></div></div></div>
+    <header id="hud">
+      <section class="status-panel">
+        <div class="brand"><span class="brand-mark">✦</span><span>EMBERWOOD</span><small>WILDERNESS</small></div>
+        <div class="stat"><span>HEALTH</span><div class="bar"><i id="healthFill"></i></div><b id="healthValue">100</b></div>
+        <div class="stat"><span>HUNGER</span><div class="bar hunger"><i id="hungerFill"></i></div><b id="hungerValue">100</b></div>
+        <div class="stat"><span>STAMINA</span><div class="bar stamina"><i id="staminaFill"></i></div><b id="staminaValue">100</b></div>
+      </section>
+      <section class="world-panel"><span id="timeIcon">☀</span><div><b id="timeLabel">DAY 1 · MORNING</b><small id="positionLabel">THE GREENWILD</small></div></section>
+      <section class="resource-panel"><div><span class="resource-icon wood">▰</span><b id="woodCount">0</b><small>WOOD</small></div><div><span class="resource-icon stone">◆</span><b id="stoneCount">0</b><small>STONE</small></div><div><span class="resource-icon berry">●</span><b id="berryCount">0</b><small>BERRIES</small></div></section>
+    </header>
+
+    <div id="hint">WASD MOVE <span>·</span> MOUSE LOOK <span>·</span> CLICK TO GATHER <span>·</span> RIGHT CLICK TO BUILD</div>
+    <div id="hotbar" class="hidden">
+      <button class="slot selected" data-slot="0"><kbd>1</kbd><span class="slot-icon">▰</span><b>WOOD</b><small id="slotWood">0</small></button>
+      <button class="slot" data-slot="1"><kbd>2</kbd><span class="slot-icon">◆</span><b>STONE</b><small id="slotStone">0</small></button>
+      <button class="slot" data-slot="2"><kbd>3</kbd><span class="slot-icon">✚</span><b>CAMPFIRE</b><small>8 WOOD</small></button>
+      <button class="slot" data-slot="3"><kbd>4</kbd><span class="slot-icon">▤</span><b>WALL</b><small>4 WOOD</small></button>
+    </div>
+    <div id="toast"></div>
+
+    <div id="start-screen" class="screen">
+      <div class="title-card">
+        <div class="eyebrow"><span></span> A VOXEL SURVIVAL ADVENTURE <span></span></div>
+        <h1>EMBER<span>WOOD</span></h1>
+        <p>A quiet forest. A long night. A world waiting to be shaped.</p>
+        <button id="playButton">ENTER THE WILDERNESS <span>↗</span></button>
+        <small>WASD to move · Mouse to look · Space to jump</small>
+      </div>
+    </div>
+
+    <div id="pause-screen" class="screen hidden">
+      <div class="title-card compact"><div class="eyebrow">TAKE A BREATH</div><h2>PAUSED</h2><p>Your wilderness is waiting.</p><button id="resumeButton">RETURN TO GAME</button></div>
+    </div>
+    <div id="loading" class="loading"><span class="loader"></span><b>GROWING THE FOREST</b></div>
   </div>
-
-  <div id="inventory">
-    <div class="res"><span class="swatch wood"></span><span id="iWood"></span></div>
-    <div class="res"><span class="swatch stone"></span><span id="iStone"></span></div>
-    <div class="res"><span class="swatch berry"></span><span id="iBerry"></span></div>
-  </div>
-
-  <div id="clockWrap">
-    <div id="clock"></div>
-    <div id="dayLabel"></div>
-  </div>
-</div>
-
-<div id="toolbar" class="hidden">
-  <button class="slot" data-k="1" data-build="campfire"><span class="k">1</span><span class="name">CAMPFIRE</span><span class="cost">8 WOOD</span></button>
-  <button class="slot" data-k="2" data-build="wall"><span class="k">2</span><span class="name">WALL</span><span class="cost">4 WOOD</span></button>
-  <button class="slot" data-k="3" data-build="torch"><span class="k">3</span><span class="name">TORCH</span><span class="cost">2 WOOD</span></button>
-  <button class="slot" data-k="4" data-build="axe"><span class="k">4</span><span class="name">SHARPEN AXE</span><span class="cost">10 WOOD + 5 STONE</span></button>
-  <div id="hint">CLICK to swing &middot; E eat berries &middot; Q drink at water &middot; RIGHT-CLICK demolish</div>
-</div>
-
-<div id="title">
-  <h1>E M B E R W O O D</h1>
-  <p class="sub">The forest takes back its land after dark.</p>
-  <p class="controls">WASD move &middot; SHIFT sprint &middot; CLICK swing &middot; 1-4 build<br>E eat berries &middot; Q drink at the lake &middot; keep a fire burning or the dark ones come</p>
-  <button id="startBtn">ENTER THE FOREST</button>
-</div>
-
-<div id="death" class="hidden">
-  <h2>THE FOREST WINS</h2>
-  <p id="deathInfo"></p>
-  <button id="restartBtn">WAKE AGAIN</button>
-</div>
-
-<script src="game.js"></script>
+  <script type="module" src="game.js"></script>
 </body>
 </html>
