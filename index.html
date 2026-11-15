@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Emberwood</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<canvas id="game"></canvas>
+
+<div id="hud" class="hidden">
+  <div id="vitals">
+    <div class="vit"><span class="vlabel">HEALTH</span><div class="vbar"><div id="bHealth" class="vfill ok"></div></div></div>
+    <div class="vit"><span class="vlabel">HUNGER</span><div class="vbar"><div id="bHunger" class="vfill"></div></div></div>
+    <div class="vit"><span class="vlabel">THIRST</span><div class="vbar"><div id="bThirst" class="vfill"></div></div></div>
+    <div class="vit"><span class="vlabel">STAMINA</span><div class="vbar"><div id="bStamina" class="vfill"></div></div></div>
+  </div>
+
+  <div id="inventory">
+    <div class="res"><span class="swatch wood"></span><span id="iWood"></span></div>
+    <div class="res"><span class="swatch stone"></span><span id="iStone"></span></div>
+    <div class="res"><span class="swatch berry"></span><span id="iBerry"></span></div>
+  </div>
+
+  <div id="clockWrap">
+    <div id="clock"></div>
+    <div id="dayLabel"></div>
+  </div>
+</div>
+
+<div id="toolbar" class="hidden">
+  <button class="slot" data-k="1" data-build="campfire"><span class="k">1</span><span class="name">CAMPFIRE</span><span class="cost">8 WOOD</span></button>
+  <button class="slot" data-k="2" data-build="wall"><span class="k">2</span><span class="name">WALL</span><span class="cost">4 WOOD</span></button>
+  <button class="slot" data-k="3" data-build="torch"><span class="k">3</span><span class="name">TORCH</span><span class="cost">2 WOOD</span></button>
+  <button class="slot" data-k="4" data-build="axe"><span class="k">4</span><span class="name">SHARPEN AXE</span><span class="cost">10 WOOD + 5 STONE</span></button>
+  <div id="hint">CLICK to swing &middot; E eat berries &middot; Q drink at water &middot; RIGHT-CLICK demolish</div>
+</div>
+
+<div id="title">
+  <h1>E M B E R W O O D</h1>
+  <p class="sub">The forest takes back its land after dark.</p>
+  <p class="controls">WASD move &middot; SHIFT sprint &middot; CLICK swing &middot; 1-4 build<br>E eat berries &middot; Q drink at the lake &middot; keep a fire burning or the dark ones come</p>
+  <button id="startBtn">ENTER THE FOREST</button>
+</div>
+
+<div id="death" class="hidden">
+  <h2>THE FOREST WINS</h2>
+  <p id="deathInfo"></p>
+  <button id="restartBtn">WAKE AGAIN</button>
+</div>
+
+<script src="game.js"></script>
+</body>
+</html>
