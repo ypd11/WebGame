@@ -132,12 +132,20 @@ function genWorld(seed) {
     }
   }
 
+  function onSpawnRoute(x, y) {
+    const dx = x - 9, dy = y - 10;
+    const along = (dx + dy) / 2;
+    const nearestX = 9 + (40 - 9) * clamp(along / 31, 0, 1);
+    const nearestY = 10 + (40 - 10) * clamp(along / 31, 0, 1);
+    return Math.hypot(x - nearestX, y - nearestY) < 3.2;
+  }
+
   function scatter(ptype, pct, clumpMin, clumpMax) {
     const target = Math.floor(W * H * pct);
     let placed = 0, guard = 0;
     while (placed < target && guard++ < 4000) {
       const stx = (rng() * W) | 0, sty = (rng() * H) | 0;
-      if (G.tiles[sty * W + stx] !== RES.GRASS || inSpawn(stx, sty)) continue;
+      if (G.tiles[sty * W + stx] !== RES.GRASS || inSpawn(stx, sty) || onSpawnRoute(stx, sty)) continue;
       let cx = stx, cy = sty;
       const n = clumpMin + ((rng() * (clumpMax - clumpMin)) | 0);
       for (let i = 0; i < n; i++) {
