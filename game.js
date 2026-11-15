@@ -995,7 +995,7 @@ function drawSticks() {
 function drawBushes() {
   for (const b of G.bushes) {
     if (b.hp <= 0) continue;
-    const x = Math.round(b.x), y = Math.round(b.y), sway = Math.sin(G.worldT * 1.3 + b.phase) * 1.2;
+    const x = Math.round(b.x), y = Math.round(b.y), sway = Math.sin(G.worldT * 1.3 + h3(b.tx, b.ty) * 6.28) * 1.2;
     // Layered, irregular foliage clusters with dark pixel outlines.
     pixelBlock(x - 13 + sway, y + 1, 26, 10, "#182b29");
     pixelBlock(x - 10 + sway, y - 6, 20, 13, "#263b35");
