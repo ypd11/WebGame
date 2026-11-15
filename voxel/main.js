@@ -76,6 +76,12 @@ function addTree(x,z) {
   }
   addBlock(x,crownY+3,z,'leaves2');
 }
+function onTrail(x,z) {
+  const dx=x-14,dz=z-14;
+  const t=clamp((dx+dz*.75)/42,0,1);
+  const px=14+t*30,pz=14+t*17;
+  return Math.hypot(x-px,z-pz)<2.4;
+}
 function generateWorld() {
   for(let x=0;x<WORLD;x++) for(let z=0;z<WORLD;z++) {
     const h = heightAt(x,z);
@@ -102,7 +108,7 @@ function generateWorld() {
   }
   for(let i=0;i<105;i++) {
     const x=3+Math.floor(rand()*(WORLD-6)),z=3+Math.floor(rand()*(WORLD-6));
-    if(x>7&&x<19&&z>7&&z<19)continue;
+    if((x>7&&x<19&&z>7&&z<19)||onTrail(x,z))continue;
     if(inLake(x,z))continue;
     if(Math.hypot(x-14,z-14)<5.5)continue;
     addTree(x,z);
@@ -251,6 +257,7 @@ function gatherOrPlace(e){
 document.addEventListener('mousedown',gatherOrPlace);
 
 function updatePlayer(dt){
+  const oldX=state.x,oldZ=state.z;
   const forward=(keys.KeyW?1:0)-(keys.KeyS?1:0);
   const side=(keys.KeyD?1:0)-(keys.KeyA?1:0);
   const moving=Math.hypot(forward,side)>0;
@@ -262,6 +269,7 @@ function updatePlayer(dt){
     state.stamina=Math.max(0,state.stamina-(speed>5?17:0)*dt+(!keys.ShiftLeft?8*dt:0));
   } else state.stamina=Math.min(100,state.stamina+12*dt);
   state.x=clamp(state.x,1,WORLD-2);state.z=clamp(state.z,1,WORLD-2);
+  if(inLake(Math.floor(state.x),Math.floor(state.z))){state.x=oldX;state.z=oldZ;}
   const floor=heightAt(Math.floor(state.x),Math.floor(state.z))+1;
   if(keys.Space&&state.grounded){state.vy=7.2;state.grounded=false;}
   state.vy-=19*dt;state.y+=state.vy*dt;
