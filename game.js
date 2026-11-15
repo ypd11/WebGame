@@ -951,6 +951,34 @@ function sunTint(col) {
   return col;
 }
 
+
+// --- Emberwood pixel-art rendering helpers ---
+function pixelBlock(x, y, w, h, color) {
+  ctx.fillStyle = color;
+  ctx.fillRect(Math.round(x), Math.round(y), Math.max(1, Math.round(w)), Math.max(1, Math.round(h)));
+}
+
+function drawGroundTexture(vp) {
+  const x0 = Math.max(0, Math.floor(vp.lx / T)), x1 = Math.min(W - 1, Math.floor(vp.rx / T));
+  const y0 = Math.max(0, Math.floor(vp.ty / T)), y1 = Math.min(H - 1, Math.floor(vp.by / T));
+  for (let ty = y0; ty <= y1; ty++) for (let tx = x0; tx <= x1; tx++) {
+    if (tileAt(tx, ty) !== RES.GRASS) continue;
+    const h = h3(tx + 31, ty + 17), k = h3(tx + 8, ty + 49);
+    const x = tx * T, y = ty * T;
+    // Small clustered pixels give the ground a hand-painted, tiled texture.
+    if (h > 0.12) pixelBlock(x + 5 + h * 17, y + 7 + k * 18, 3, 2, "rgba(115,132,82,0.22)");
+    if (h > 0.34) pixelBlock(x + 23 + k * 9, y + 25 + h * 8, 4, 2, "rgba(18,37,31,0.22)");
+    if (h > 0.57) {
+      pixelBlock(x + 8 + k * 12, y + 30, 2, 4, "rgba(139,151,91,0.20)");
+      pixelBlock(x + 29, y + 8 + h * 13, 2, 3, "rgba(139,151,91,0.16)");
+    }
+    if (k > 0.91) {
+      pixelBlock(x + 13, y + 17, 3, 2, "rgba(194,143,126,0.32)");
+      pixelBlock(x + 17, y + 19, 2, 2, "rgba(194,143,126,0.24)");
+    }
+  }
+}
+
 function drawSticks() {
   ctx.lineCap = "round";
   for (const s of G.sticks) {
@@ -967,18 +995,20 @@ function drawSticks() {
 function drawBushes() {
   for (const b of G.bushes) {
     if (b.hp <= 0) continue;
-    const bx = b.x, by = b.y;
-    const s = Math.sin(b.phase) * 0.06;
-    ctx.fillStyle = "#1f4a20";
-    ctx.beginPath(); ctx.ellipse(bx + s * 6, by + 6, 12, 9, 0, 0, 6.28); ctx.fill();
-    ctx.fillStyle = "#2f6a2c";
-    ctx.beginPath(); ctx.ellipse(bx - 4 + s * 5, by + 2, 9, 7, 0.3, 0, 6.28); ctx.fill();
-    ctx.fillStyle = "#3f8c38";
-    ctx.beginPath(); ctx.ellipse(bx + 6 + s * 6, by - 1, 7, 6, -0.3, 0, 6.28); ctx.fill();
-    for (let i = 0; i < 6; i++) {
-      const ha = i / 6 * 6.28 + b.phase;
-      ctx.fillStyle = "#c8324a";
-      ctx.beginPath(); ctx.arc(bx + Math.cos(ha) * 7 + s * 6, by + Math.sin(ha) * 5, 2, 0, 6.28); ctx.fill();
+    const x = Math.round(b.x), y = Math.round(b.y), sway = Math.sin(G.worldT * 1.3 + b.phase) * 1.2;
+    // Layered, irregular foliage clusters with dark pixel outlines.
+    pixelBlock(x - 13 + sway, y + 1, 26, 10, "#182b29");
+    pixelBlock(x - 10 + sway, y - 6, 20, 13, "#263b35");
+    pixelBlock(x - 7 + sway, y - 10, 14, 8, "#344b3b");
+    pixelBlock(x - 12 + sway, y - 3, 8, 7, "#405a43");
+    pixelBlock(x + 3 + sway, y - 7, 8, 7, "#506346");
+    pixelBlock(x - 7 + sway, y - 9, 4, 3, "#718052");
+    pixelBlock(x + 4 + sway, y - 4, 3, 3, "#758653");
+    for (let i = 0; i < 5; i++) {
+      const px = x - 8 + i * 4 + (h3(b.tx, i) - 0.5) * 3;
+      const py = y - 2 + (i % 2) * 4;
+      pixelBlock(px, py, 3, 3, "#b64b70");
+      pixelBlock(px, py, 1, 1, "#f39ab0");
     }
   }
 }
@@ -986,47 +1016,37 @@ function drawBushes() {
 function drawRocks() {
   for (const r of G.rocks) {
     if (r.hp <= 0) continue;
-    ctx.fillStyle = "#5d666f";
-    ctx.beginPath(); ctx.ellipse(r.x, r.y + 7, 15, 11, 0, 0, 6.28); ctx.fill();
-    ctx.fillStyle = "#7d8792";
-    ctx.beginPath(); ctx.ellipse(r.x - 3, r.y + 2, 12, 8, 0.4, 0, 6.28); ctx.fill();
-    ctx.fillStyle = "#a2adb8";
-    ctx.beginPath(); ctx.ellipse(r.x - 6, r.y - 3, 6, 4, 0.6, 0, 6.28); ctx.fill();
-    ctx.strokeStyle = "rgba(0,0,0,0.25)";
-    ctx.lineWidth = 1;
-    ctx.stroke();
+    const x = Math.round(r.x), y = Math.round(r.y);
+    pixelBlock(x - 14, y + 5, 29, 10, "rgba(4,9,14,0.34)");
+    pixelBlock(x - 12, y - 2, 24, 12, "#343d4a");
+    pixelBlock(x - 9, y - 8, 18, 13, "#596574");
+    pixelBlock(x - 5, y - 12, 11, 8, "#778493");
+    pixelBlock(x - 7, y - 8, 7, 4, "#a0a8ad");
+    pixelBlock(x + 5, y - 3, 5, 5, "#414d59");
+    pixelBlock(x - 10, y + 1, 5, 3, "#89939b");
   }
 }
 
 function drawPlayer() {
   const p = G.player;
   ctx.save();
-  ctx.translate(p.x, p.y);
+  ctx.translate(Math.round(p.x), Math.round(p.y));
   if (p.invuln > 0 && Math.floor(G.time * 20) % 2 === 0) ctx.globalAlpha = 0.5;
-
-  ctx.fillStyle = "rgba(0,0,0,0.25)";
-  ctx.beginPath(); ctx.ellipse(0, p.r - 1, p.r * 1.15, p.r * 0.5, 0, 0, 6.28); ctx.fill();
-
+  const bob = p.moving ? Math.round(Math.sin(p.anim * 2) * 1.5) : 0;
+  pixelBlock(-8, 7, 16, 5, "rgba(0,0,0,0.34)");
   ctx.rotate(p.facing);
-  const bob = p.moving ? Math.sin(p.anim * 2) * 1.3 : Math.sin(p.anim * 1.1) * 0.3;
-  ctx.fillStyle = "#d7b078";
-  ctx.beginPath(); ctx.arc(0, -2 + bob * 0.3, p.r, 0, 6.28); ctx.fill();
-  ctx.strokeStyle = "#a5793f";
-  ctx.lineWidth = 2;
-  ctx.stroke();
-
-  ctx.beginPath();
-  ctx.moveTo(0, -2 + bob * 0.3);
-  ctx.lineTo(p.r + 7, bob * 0.3 + Math.sin(p.swingCd * 9) * 6);
-  ctx.stroke();
-
-  ctx.fillStyle = "#523a1f";
-  ctx.beginPath(); ctx.arc(-4, -6 + bob, 3.4, 0, 6.28); ctx.fill();
-  ctx.fillStyle = "#2c2636";
-  ctx.beginPath(); ctx.arc(-4, -6 + bob, 1.7, 0, 6.28); ctx.fill();
-  ctx.fillStyle = "#fff";
-  ctx.beginPath(); ctx.arc(-4.7, -6.7 + bob, 0.55, 0, 6.28); ctx.fill();
-
+  // Tiny readable adventurer sprite, built from crisp pixel clusters.
+  pixelBlock(-5, -5 + bob, 10, 13, "#713f3c");
+  pixelBlock(-6, -3 + bob, 12, 7, "#a94e45");
+  pixelBlock(-5, -10 + bob, 10, 8, "#d7a06d");
+  pixelBlock(-4, -12 + bob, 8, 4, "#54372e");
+  pixelBlock(-5, -8 + bob, 3, 3, "#edc18b");
+  pixelBlock(2, -8 + bob, 3, 3, "#edc18b");
+  pixelBlock(-5, 7 + bob, 4, 4, "#302c39");
+  pixelBlock(2, 7 + bob, 4, 4, "#302c39");
+  pixelBlock(6, -1 + bob, 4, 8, "#d4b17a");
+  pixelBlock(9, -3 + bob, 2, 8, "#8a623e");
+  pixelBlock(10, -5 + bob, 5, 3, "#b9c0c1");
   ctx.globalAlpha = 1;
   ctx.restore();
 }
@@ -1034,34 +1054,29 @@ function drawPlayer() {
 function drawTrees() {
   for (const t of G.trees) {
     if (t.hp <= 0) continue;
-    const sway = Math.sin(G.worldT * 1.0 + t.phase) * 2;
-    ctx.fillStyle = "rgba(0,0,0,0.22)";
-    ctx.beginPath();
-    ctx.ellipse(t.x + sway * 0.2, t.y + 15, 9 * t.scale, 4.5, 0, 0, 6.28);
-    ctx.fill();
-
-    ctx.strokeStyle = "#5d3c1e";
-    ctx.lineWidth = 7;
-    ctx.beginPath();
-    ctx.moveTo(t.x, t.y + 12);
-    ctx.lineTo(t.x + sway * 0.3, t.y - 10);
-    ctx.stroke();
-
-    ctx.fillStyle = "rgba(0,0,0,0.18)";
-    ctx.beginPath(); ctx.arc(t.x + sway * 0.5 + 3, t.y - 14 + 3, 19 * t.scale, 0, 6.28); ctx.fill();
-    const shade = Math.max(0, sunFactor());
-    ctx.fillStyle = rgbStr(30 + 30 * shade, 84 + 40 * shade, 30 + 22 * shade);
-    ctx.beginPath(); ctx.arc(t.x + sway * 0.5, t.y - 14, 19 * t.scale, 0, 6.28); ctx.fill();
-    ctx.fillStyle = rgbStr(48 + 44 * shade, 120 + 52 * shade, 48 + 30 * shade);
-    ctx.beginPath();
-    ctx.arc(t.x + sway * 0.5 + 7, t.y - 20, 9.5 * t.scale, 0, 6.28);
-    ctx.fill();
-    ctx.beginPath();
-    ctx.arc(t.x + sway * 0.5 - 8, t.y - 11, 9 * t.scale, 0, 6.28);
-    ctx.fill();
-
-    if (Math.random() < 0.004 && sunFactor() > 0.3) {
-      addP({ x: t.x, y: t.y - 20, vx: (Math.random() - 0.5) * 20, vy: 30 + Math.random() * 30, life: 2.2, max: 2.2, size: 4, color: "#2f5f2a", type: 1 });
+    const x = Math.round(t.x), y = Math.round(t.y), sc = t.scale;
+    const sway = Math.round(Math.sin(G.worldT * 0.8 + t.phase) * 1.2);
+    const w = Math.round(25 * sc), h = Math.round(23 * sc);
+    // Ground shadow and trunk remain visible beneath the canopy.
+    ctx.fillStyle = "rgba(0,0,0,0.32)";
+    ctx.beginPath(); ctx.ellipse(x + 3, y + 14, 13 * sc, 5 * sc, 0, 0, 6.28); ctx.fill();
+    pixelBlock(x - 3, y - 1, 7, 17, "#49352e");
+    pixelBlock(x - 1, y - 4, 4, 12, "#78513a");
+    // Three overlapping foliage masses create the chunky canopy silhouette.
+    pixelBlock(x - w, y - h + sway, w * 2, h * 1.35, "#182b31");
+    pixelBlock(x - w + 3, y - h - 5 + sway, w * 1.65, h, "#263b43");
+    pixelBlock(x - w + 7, y - h - 10 + sway, w * 1.1, h * 0.78, "#34494b");
+    pixelBlock(x - w + 1, y - h + 2 + sway, w * 0.55, h * 0.58, "#40554b");
+    pixelBlock(x + 2, y - h + 1 + sway, w * 0.62, h * 0.55, "#4b604c");
+    pixelBlock(x - w + 7, y - h - 8 + sway, 7 * sc, 4 * sc, "#78805a");
+    pixelBlock(x + 5, y - h + sway, 6 * sc, 4 * sc, "#687956");
+    pixelBlock(x - w + 4, y - h + 9 + sway, 5 * sc, 3 * sc, "#52654e");
+    // Scattered leaf highlights, deterministic so they don't flicker.
+    for (let i = 0; i < 7; i++) {
+      const q = h3(t.tx + i * 13, t.ty + 5);
+      const lx = x - w + 4 + q * (w * 1.7);
+      const ly = y - h + 2 + h3(t.tx + 2, t.ty + i * 7) * (h * 0.9);
+      pixelBlock(lx, ly, 2 + q * 2, 2, q > 0.55 ? "#667653" : "#354b46");
     }
   }
 }
@@ -1283,8 +1298,8 @@ function drawLighting(vp) {
   const night = sunFactor();
   o.globalCompositeOperation = "source-over";
   o.clearRect(0, 0, w, h);
-  const dark = 0.82 * (1 - night) + 0.08;
-  o.fillStyle = "rgba(4,5,14," + dark.toFixed(3) + ")";
+  const dark = 0.88 * (1 - night) + 0.10;
+  o.fillStyle = "rgba(8,7,25," + dark.toFixed(3) + ")";
   o.fillRect(0, 0, w, h);
 
   o.globalCompositeOperation = "destination-out";
@@ -1393,6 +1408,7 @@ function render() {
     drawSky({}, 0);
     ctx.translate(-vp.lx + G.cam.shx, -vp.ty + G.cam.shy);
     drawGround(vp);
+    drawGroundTexture(vp);
     drawRocks();
     drawBushes();
     drawSticks();
