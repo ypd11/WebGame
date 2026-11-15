@@ -2,6 +2,8 @@
 
 const canvas = document.getElementById("game");
 const ctx = canvas.getContext("2d");
+const playerSprite = new Image();
+playerSprite.src = "assets/player-sprites.svg";
 
 const T = 40;
 const W = 80;
@@ -175,6 +177,7 @@ function initGame() {
     vx: 0, vy: 0,
     hp: 100, hunger: 100, thirst: 100, stamina: 100,
     facing: -Math.PI / 2,
+    dir: 0,
     aim: 0,
     swingCd: 0, invuln: 0,
     stepDist: 0, anim: 0
@@ -352,6 +355,10 @@ function updatePlayer(dt) {
   }
   const moving = Math.abs(mx) + Math.abs(my) > 0;
   p.moving = moving;
+  if (moving) {
+    if (Math.abs(mx) > Math.abs(my)) p.dir = mx < 0 ? 1 : 2;
+    else p.dir = my < 0 ? 3 : 0;
+  }
   let nx = mx, ny = my;
   if (moving) { const ml = Math.hypot(mx, my); nx = mx / ml; ny = my / ml; }
   const damp = Math.exp(-10 * dt);
@@ -371,7 +378,6 @@ function updatePlayer(dt) {
   p.swingCd = Math.max(0, p.swingCd - dt);
   p.invuln = Math.max(0, p.invuln - dt);
 
-  p.facing = lerpAngle(p.facing, p.aim, Math.min(1, 14 * dt));
 
   p.hunger = Math.max(0, p.hunger - 0.20 * dt);
   p.thirst = Math.max(0, p.thirst - 0.28 * dt);
@@ -1032,25 +1038,31 @@ function drawPlayer() {
   ctx.save();
   ctx.translate(Math.round(p.x), Math.round(p.y));
   if (p.invuln > 0 && Math.floor(G.time * 20) % 2 === 0) ctx.globalAlpha = 0.5;
-  const bob = p.moving ? Math.round(Math.sin(p.anim * 2) * 1.5) : 0;
-  pixelBlock(-8, 7, 16, 5, "rgba(0,0,0,0.34)");
-  ctx.rotate(p.facing);
-  // Tiny readable adventurer sprite, built from crisp pixel clusters.
-  pixelBlock(-5, -5 + bob, 10, 13, "#713f3c");
-  pixelBlock(-6, -3 + bob, 12, 7, "#a94e45");
-  pixelBlock(-5, -10 + bob, 10, 8, "#d7a06d");
-  pixelBlock(-4, -12 + bob, 8, 4, "#54372e");
-  pixelBlock(-5, -8 + bob, 3, 3, "#edc18b");
-  pixelBlock(2, -8 + bob, 3, 3, "#edc18b");
-  pixelBlock(-5, 7 + bob, 4, 4, "#302c39");
-  pixelBlock(2, 7 + bob, 4, 4, "#302c39");
-  pixelBlock(6, -1 + bob, 4, 8, "#d4b17a");
-  pixelBlock(9, -3 + bob, 2, 8, "#8a623e");
-  pixelBlock(10, -5 + bob, 5, 3, "#b9c0c1");
+
+  // Ground shadow anchors the sprite to the terrain.
+  ctx.fillStyle = "rgba(0,0,0,0.34)";
+  ctx.beginPath();
+  ctx.ellipse(0, 11, 11, 5, 0, 0, 6.28);
+  ctx.fill();
+
+  if (playerSprite.complete && playerSprite.naturalWidth > 0) {
+    const frame = p.moving ? (Math.floor(p.anim / 0.16) % 2) : 0;
+    const sx = (p.dir || 0) * 32;
+    const sy = frame * 32;
+    ctx.imageSmoothingEnabled = false;
+    ctx.drawImage(playerSprite, sx, sy, 32, 32, -18, -22, 36, 36);
+  } else {
+    // Safe fallback while the sprite sheet is loading.
+    ctx.fillStyle = "#9b4246";
+    ctx.fillRect(-6, -5, 12, 13);
+    ctx.fillStyle = "#704238";
+    ctx.fillRect(-6, -12, 12, 8);
+    ctx.fillStyle = "#e8b17d";
+    ctx.fillRect(-4, -8, 8, 5);
+  }
   ctx.globalAlpha = 1;
   ctx.restore();
 }
-
 function drawTrees() {
   for (const t of G.trees) {
     if (t.hp <= 0) continue;
@@ -1330,6 +1342,26 @@ function drawLighting(vp) {
   ctx.drawImage(off, 0, 0);
 }
 
+function drawCampfireGlow(vp) {
+  const left = G.cam.x - vp.w / 2;
+  const top = G.cam.y - vp.h / 2;
+  ctx.save();
+  ctx.globalCompositeOperation = "screen";
+  for (const f of G.fires) {
+    if (!f.lit) continue;
+    const x = f.x - left, y = f.y - top - 5;
+    const flicker = 0.94 + Math.sin(G.time * 12 + f.phase) * 0.06;
+    const radius = (f.avoidR === 130 ? 115 : 175) * flicker;
+    const g = ctx.createRadialGradient(x, y, 2, x, y, radius);
+    g.addColorStop(0, "rgba(255,170,76,0.22)");
+    g.addColorStop(0.28, "rgba(239,112,45,0.12)");
+    g.addColorStop(1, "rgba(239,112,45,0)");
+    ctx.fillStyle = g;
+    ctx.fillRect(x - radius, y - radius, radius * 2, radius * 2);
+  }
+  ctx.restore();
+}
+
 function drawStars(vp) {
   const night = nightFactor();
   if (night < 0.1) return;
@@ -1422,6 +1454,7 @@ function render() {
     drawFloats();
     ctx.setTransform(dpr2, 0, 0, dpr2, 0, 0);
     drawLighting(vp);
+    drawCampfireGlow(vp);
     drawStars(vp);
     drawFog(vp);
     drawVignette(vp);
